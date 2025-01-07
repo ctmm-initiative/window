@@ -19,7 +19,7 @@ Clone the repository and set up the environment:
 ```bash
 git clone https://github.com/ctmm-initiative/window.git
 cd window
-
+```
 ### Arguments
 - data (tracking data of ctmm class)
 - variable (calculates parameter estimate : "area", "diffusion", "velocity")
@@ -42,7 +42,7 @@ window <- as.difftime(10, units = "days")
 results <- sliding_window(data = Data, window = window, dt.min = min_time_step, recycle = TRUE)
   #plot results
 plot(results)
-
+```
 ## Acknowledgments
 - This project was developed by Michael Garan under the guidance of Dr. Christen Fleming.
 
