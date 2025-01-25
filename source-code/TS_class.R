@@ -1,25 +1,28 @@
-library(ctmm)
+# Define S4 class
+setClass(
+  "TS",
+  slots = list(
+    dataframe = "data.frame",  # Slot for storing the data
+    variable = "character"     # Slot for the variable name
+  )
+)
 
-# Define class
-setClass("TS",
-         slots = list(
-           dataframe = "data.frame",  # Slot for storing data
-           variable = "character"
-         ))
-
+# Define the plot method for the TS class
 setMethod(
-  "plot", "TS",
+  "plot", 
+  "TS",
   function(x, col = "black", ylab = "", ...) {
+    # Extract the data and variable from the TS object
+    data <- x@dataframe
+    variable <- x@variable
     
-    # Handle X-axis
-    data <- x@dataframe  # Reference the dataframe slot in the TS object
-    t <- data$timestamp  # Extract timestamps for the x-axis
+    # Handle X-axis (time)
+    t <- data$timestamp
     
     # Handle Y-axis
-    variable <- x@variable  # Extract the variable name from the TS object
     CI <- c(data$point_estimate, data$CI_low, data$CI_high)  # Combine columns for dimfig
     dimfig_output <- dimfig(data = CI, dimension = variable)  # Perform unit conversion
-    units_label <- dimfig_output$units[2]  # Use the short unit label
+    units_label <- dimfig_output$units[2]  # Use the short unit label for units
     ylab <- paste(variable, "(", units_label, ")", sep = "")
     
     # Update dataframe values to converted units
@@ -42,5 +45,3 @@ setMethod(
     graphics::lines(t, data$CI_high, col = adjustcolor(col, alpha.f = 0.3), lty = 2, ...)
   }
 )
-
-

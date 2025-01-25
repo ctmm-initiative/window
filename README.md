@@ -32,16 +32,30 @@ cd window
 Create an object of class TS using the animal tracking data, and then use plot() to visualize the TS object
 ```r
 library(ctmm)
-  # Download Data
+  # Download example Data
 data(buffalo)
 Data <- buffalo$Cilla
 
+  # Individual window estimates
+single_data <- Data[[1]] # Extract individual dataset from buffalo
+single_data_GUESS <- ctmm.guess(single_data, interactive = FALSE)
+results <- sliding_window(data = single_data, CTMM = single_data_GUESS, window = window, dt.min = min_time_step, recycle = TRUE)
+
+  # Population window estimates
+min_time_step <- as.difftime(10, units = "days")
+window <- as.difftime(30, units = "days")
+population_data <- buffalo[c(1, 3, 6)]  # Subset datasets from buffalo
+population_GUESS <- lapply(population_data, function(population_data) ctmm.guess(population_data, interactive = FALSE))
+population_TS <- sliding_window(data = population_data, CTMM = population_GUESS, window = window, dt.min = min_time_step, recycle = TRUE)
+
   # Create TS (Timeseries) object using sliding_window()
 min_time_step <- as.difftime(10, units = "days")
-window <- as.difftime(10, units = "days")
-results <- sliding_window(data = Data, window = window, dt.min = min_time_step, recycle = TRUE)
+window <- as.difftime(30, units = "days")
+individual_TS <- sliding_window(data = Data, window = window, dt.min = min_time_step, recycle = TRUE)
+
   #plot results
-plot(results)
+plot(population_TS)
+plot(individual_TS)
 ```
 ## Acknowledgments
 - This project was developed by Michael Garan under the guidance of Dr. Christen Fleming.
