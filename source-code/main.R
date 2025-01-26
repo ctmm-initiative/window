@@ -110,6 +110,3 @@ sliding_window <- function(data, CTMM = NULL, window, dt.min = 0, recycle = FALS
   
   return(ts_result)
 }
-
-plot(results)
-
