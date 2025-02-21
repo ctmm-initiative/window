@@ -1,6 +1,9 @@
-# Individual example dataset
 library(ctmm)
+
+# Download example data
 data(buffalo)
+
+# Individual example dataset
 individual_data <- buffalo$Cilla
 individual_GUESS <- ctmm.guess(individual_data, interactive = FALSE)
 
