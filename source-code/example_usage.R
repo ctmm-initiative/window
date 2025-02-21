@@ -1,7 +1,8 @@
 # Individual example dataset
+library(ctmm)
 data(buffalo)
 individual_data <- buffalo$Cilla
-single_data_GUESS <- ctmm.guess(individual_data, interactive = FALSE)
+individual_GUESS <- ctmm.guess(individual_data, interactive = FALSE)
 
 # Population example dataset
 population_data <- buffalo[c(1, 3, 6)]
@@ -12,11 +13,11 @@ min_time_step <- as.difftime(10, units = "days")
 window <- as.difftime(30, units = "days")
 
 # Create TS of individual window estimates
-individual_TS <- sliding_window(data = individual_data, CTMM = single_data_GUESS, window = window, dt.min = min_time_step, recycle = TRUE)
+individual_TS <- slide(data = individual_data, CTMM = individual_GUESS, window = window, dt.min = min_time_step, recycle = TRUE)
 
 # Create TS of population window estimates
-population_TS <- sliding_window(data = population_data, CTMM = population_GUESS, window = window, dt.min = min_time_step, recycle = TRUE)
+population_TS <- slide(data = population_data, CTMM = population_GUESS, window = window, dt.min = min_time_step, recycle = TRUE)
 
-# plot results
+ # plot results
 plot(population_TS)
 plot(individual_TS)

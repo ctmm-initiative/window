@@ -1,15 +1,13 @@
-library(ctmm)
-
 #window intervals if data argument is a list of datasets
 global_timestamps <- function(data_list, dt.min, window) {
-
+  
   # Extract timestamps from each dataset
   timestamps <- lapply(data_list, function(data) as.POSIXct(data$timestamp))
   
   # Calculate global start and end times
   global_start <- max(sapply(timestamps, min))  # Max of the minimum timestamps
   global_end <- min(sapply(timestamps, max))    # Min of the maximum timestamps
-
+  
   # Ensure global_start is before global_end
   if (global_start > global_end) {
     stop("Datasets do not overlap")
@@ -20,7 +18,9 @@ global_timestamps <- function(data_list, dt.min, window) {
   window <- as.numeric(window, units = "secs")
   
   # Generate sequence of aligned timestamps
-  aligned_window_start <- seq(from = global_start, to = global_end, by = step_size)
+  length.out <- (global_end - global_start) / step_size + 1
+  length.out <- ceiling(length.out)  # Rounds up to ensure no truncation
+  aligned_window_start <- seq(from = global_start, to = global_end, length.out = length.out)
   
   # Trim aligned_window_start so that no window exceeds global_end
   aligned_window_start <- aligned_window_start[aligned_window_start + window <= global_end]
@@ -28,7 +28,7 @@ global_timestamps <- function(data_list, dt.min, window) {
   # Returns aligned_window_start to POXIXct format
   aligned_window_start <- as.POSIXct(aligned_window_start, origin = "1970-01-01", tz = "UTC")
   
-
+  
   return(aligned_window_start)
 }
 
@@ -58,6 +58,3 @@ individual_timestamps <- function(data, dt.min, window) {
   
   return(window_start)
 }
-
-
-

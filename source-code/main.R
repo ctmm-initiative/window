@@ -1,7 +1,5 @@
-library(ctmm)
-
-sliding_window <- function(data, CTMM = NULL, window, dt.min = 0, recycle = FALSE) {
-  
+slide <- function(data, CTMM = NULL, window, dt.min = 0, variable = "area", 
+                  recycle = FALSE, select = FALSE, ...) {
   # data & CTMM arguments can be a list of data.frames or a single data.frame
   if (is.list(data) && all(sapply(data, inherits, "data.frame"))) {
     window_starts <- global_timestamps(data, dt.min, window) # Determine the start of each window
@@ -15,91 +13,82 @@ sliding_window <- function(data, CTMM = NULL, window, dt.min = 0, recycle = FALS
     stop("Error: The object is neither a data frame nor a list of data frames")
   }
   
-  # Initialize a vector to store closest timestamps for the current dataset
-  aligned_timestamps <- vector("list", length = length(window_starts))
+  # Initialize start and end indices for each dataset (will move forward every window)
+  start_index <- rep(1, length(data))
+  end_index <- rep(1, length(data))
+
+  # Initialize a list to store extracted Confidence Intervals before converting to dataframe
+  results_list <- list()
   
-  # Iterate over each data set in the input data
-  for (i in seq_along(data)) {
-    dataset <- data[[i]]  # Current dataset
-    timestamps <- dataset$timestamp  # Extract timestamps from dataset
-    
-    # Iterate over each global start time
-    for (j in seq_along(window_starts)) {
-      start_time <- window_starts[j]
-      
-      # Compute the closest timestamp to the global start time
-      closest_index <- which.min(abs(timestamps - start_time))
-      aligned_timestamps[[i]][j] <- timestamps[closest_index]
-    }
-  }
+  # Initialize recycled guess object
+  previous_model <- vector("list", length(data))  # Creates a list with NULL elements
   
-  # Fit window models and store variable estimates in a dataframe
-  population_models <- list()
-  results_list <- list() # Save results in list before converting to dataframe
-  
-  window_count <- length(aligned_timestamps[[1]])  # Use the length of aligned_timestamps[1]
-  previous_models <- CTMM  # Initialize with the initial CTMM models
-  
-  for (window_start_index in 1:window_count) {  # Iterate over window indices
-    # Initialize a list to hold individual models for the current window
-    current_window_models <- list()
+  # Iterate over each window
+  window_count <- 0
+  for (window_start_index in seq_along(window_starts)) {
+    # Initialize list to store the window estimates from each dataset
+    window_estimate <- vector("list", length(data))  
     
     for (i in seq_along(data)) {  # Iterate over each dataset
       dataset <- data[[i]]  # Current dataset
       timestamps <- dataset$timestamp  # Timestamps in the current dataset
-      start_times <- aligned_timestamps[[i]]  # Aligned start times for this dataset
       
-      # Get the start time for the current window
-      start_time <- start_times[window_start_index]
+      # Move start_index forward until within the window
+      while (timestamps[start_index[i]] < window_starts[window_start_index] && start_index[i] < length(timestamps)) {
+        start_index[i] <- start_index[i] + 1
+      }
       
-      # Calculate bounds
-      lower_bound <- window_start_index
-      start_time <- as.numeric(start_time, units = "secs") # Convert POSIXct
-      window <- as.numeric(window, units = "secs") # Convert Difftime
-      upper_bound_value <- start_time + window
-      # Return sum to POSIXct
-      upper_bound_value <- as.POSIXct(upper_bound_value, origin = "1970-01-01", tz = "UTC")
-      upper_bound <- which.min(abs(timestamps - upper_bound_value))
+      # Move end_index forward to maintain the window size
+      while (timestamps[end_index[i]] <= (window_starts[window_start_index] + window) && end_index[i] < length(timestamps)) {
+        end_index[i] <- end_index[i] + 1
+      }
       
-      # Subset the data using the upper and lower bounds
-      subset_data <- dataset[timestamps >= start_time & timestamps <= upper_bound_value, ]
+      # Extract the data subset
+      subset_data <- dataset[start_index[i]:end_index[i], ]
       
-      # Fit a model to the subset
-      guess <- if (recycle && !is.null(previous_models)) previous_models[[i]] else CTMM[[i]]
-      fitted_model <- ctmm.fit(subset_data, guess)  # Use the previous model if recycle = TRUE
+      # Recycle previous CTMM model (if recycle = TRUE) or use provided CTMM model
+      guess <- if (recycle && !is.null(previous_model[[i]])) previous_model[[i]] else CTMM[[i]]
       
-      # Save the fitted model
-      current_window_models[[i]] <- fitted_model
+      # Fit models
+      fitted_model <- if (select) ctmm.select(subset_data, guess) else ctmm.fit(subset_data, guess)
+      
+      # Update previous model after fitting
+      if (recycle) {
+        previous_model[[i]] <- fitted_model  
+      }
+      
+      # Compute "akde" (auto-correlated kernel density estimate)
+      if (variable == "area") {
+        window_estimate[[i]] <- akde(subset_data, fitted_model)
+      }
     }
     
-    # Update previous models if recycle = TRUE
-    if (recycle) {
-      previous_models <- current_window_models
+     # If individual-level estimate, feed "akde" into summary
+    if (individual_df) {
+      summary_result <- summary(window_estimate[[1]])
+      CI_low <- summary_result$CI[1]
+      point_estimate <- summary_result$CI[2]
+      CI_high <- summary_result$CI[3]
+    } else {
+     # If population-level estimate, feed "akde" into meta()
+      summary_result <- meta(window_estimate)
+      # Save point estimates and confidence intervals
+      CI_low <- summary_result[1,1]
+      point_estimate <- summary_result[1,2]
+      CI_high <- summary_result[1,3]
     }
-    
-    # Run meta() on the current set of models
-    if (!individual_df) {
-      current_window_model <- meta(current_window_models)
-    }
-    
-    home_range <- akde(subset_data, current_window_models)
-    summary_result <- summary(home_range, units = FALSE)
-    
-    # Save point estimates and confidence intervals
-    CI_low <- summary_result$CI[1]
-    CI_high <- summary_result$CI[3]
-    point_estimate <- summary_result$CI[2]
-    DOF_estimate <- summary_result$DOF["area"]
-    
+
     # Append to results_list
     results_list[[window_start_index]] <- list(
       timestamp = window_starts[[window_start_index]],
       point_estimate = point_estimate,
-      DOF = DOF_estimate,
+      #DOF = DOF_estimate,
       CI_low = CI_low,
       CI_high = CI_high
     )
+    window_count <- window_count + 1
   }
+  
   # Convert list into data.frame
   results_df <- do.call(rbind, lapply(results_list[1:window_count], as.data.frame))
   
