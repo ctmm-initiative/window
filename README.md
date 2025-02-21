@@ -2,11 +2,11 @@
 This project introduces a sliding window analysis function for the `ctmm` R package.
 
 ## Features
-- Flexible sliding window analysis for time-series data.
-- Extracts point estimates and uncertainty measures for selected variables.
-- Customizable window size and time step options.
-- Visualization tools for intuitive time-series plots.
-- Compatible with the `ctmm` package's existing framework.
+- Custom time-series object class for sliding window analysis of animal tracking data
+- Extracts and plots point estimates and confidence intervals for selected variable estimates
+- Customizable window size and time step options
+- Flexible functionality for individual and population level estimates
+- Compatible with the `ctmm` package's existing framework
 
 ## Getting Started
 
@@ -32,13 +32,13 @@ cd window
 Create an object of class TS using the animal tracking data, and then use plot() to visualize the TS object
 ```r
 library(ctmm)
-  # Download example Data
-data(buffalo)
 
+  # Download example data
+data(buffalo)
 
   # Individual example dataset
 individual_data <- buffalo$Cilla
-single_data_GUESS <- ctmm.guess(individual_data, interactive = FALSE)
+individual_GUESS <- ctmm.guess(individual_data, interactive = FALSE)
 
   # Population example dataset
 population_data <- buffalo[c(1, 3, 6)]
@@ -49,14 +49,15 @@ min_time_step <- as.difftime(10, units = "days")
 window <- as.difftime(30, units = "days")
 
   # Create TS of individual window estimates
-individual_TS <- sliding_window(data = individual_data, CTMM = single_data_GUESS, window = window, dt.min = min_time_step, recycle = TRUE)
+individual_TS <- slide(data = individual_data, CTMM = individual_GUESS, window = window, dt.min = min_time_step, recycle = TRUE)
 
   # Create TS of population window estimates
-population_TS <- sliding_window(data = population_data, CTMM = population_GUESS, window = window, dt.min = min_time_step, recycle = TRUE)
+population_TS <- slide(data = population_data, CTMM = population_GUESS, window = window, dt.min = min_time_step, recycle = TRUE)
 
   # plot results
 plot(population_TS)
 plot(individual_TS)
+
 ```
 ## Acknowledgments
 - This project was developed by Michael Garan under the guidance of Dr. Christen Fleming.
