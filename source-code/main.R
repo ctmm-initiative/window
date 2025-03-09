@@ -1,11 +1,12 @@
 slide <- function(data, CTMM = NULL, window, dt.min = 0, variable = "area", 
-                  recycle = FALSE, max_windows = Inf, select = FALSE, Gaussian = FALSE, ...) {
+                  recycle = FALSE, max_windows = Inf, select = FALSE,
+                  Gaussian = FALSE, ...) {
  # data & CTMM arguments can be a list of data.frames or a single data.frame
  if (is.list(data) && all(sapply(data, inherits, "data.frame"))) {
    window_starts <- global_timestamps(data, dt.min, window) # Determine the start of each window
    individual_df <- FALSE
  } else if (inherits(data, "data.frame")) {
-   window_starts <- individual_timestamps(data, dt.min, window)
+   window_starts <- individual_timestamps(data, dt.min, window) # Determine the start of each window
    CTMM <- list(CTMM)
    data <- list(data)
    individual_df <- TRUE
@@ -24,7 +25,6 @@ slide <- function(data, CTMM = NULL, window, dt.min = 0, variable = "area",
  previous_model <- vector("list", length(data))  # Creates a list with NULL elements
    
  # Iterate over each window
- window_count <- 0
  for (window_start_index in seq_along(window_starts)) {
    # Initialize list to store the window estimates from each dataset
    window_estimate <- vector("list", length(data))  
@@ -69,10 +69,10 @@ slide <- function(data, CTMM = NULL, window, dt.min = 0, variable = "area",
        window_estimate[[i]] <- speed(FIT, ...) # stationary Gaussian estimate
      }
      # Save fit_models as window_estimate for simplicity before feeding to meta()
-     if (variable == "tau position") {
+     if (variable == "position") {
        window_estimate[[i]] <- FIT
      }
-     if (variable == "tau velocity") {
+     if (variable == "velocity") {
        window_estimate[[i]] <- FIT
      }
      if (variable == "diffusion") {
@@ -85,14 +85,15 @@ slide <- function(data, CTMM = NULL, window, dt.min = 0, variable = "area",
      window_estimate <- Filter(function(x) inherits(x, "UD"), window_estimate)
    }
    
-    # Extract individual-level area estimate from summary
-   if (individual_df && variable == "area") {
+    # Feed individual_level estimates into summary()
+   if (individual_df) {
      summary_result <- summary(window_estimate[[1]])
-     CI_low <- summary_result$CI[1]
-     point_estimate <- summary_result$CI[2]
-     CI_high <- summary_result$CI[3]
+     print(summary_result)
+     rownames(summary_result$CI) <- c("area", "position", "velocity", "speed", "diffusion")
+     CI_low <- summary_result$CI[variable, 1]
+     point_estimate <- summary_result$CI[variable, 2]
+     CI_high <- summary_result$CI[variable, 3]
    } else {
-     
     # Feed population_level estimates (or fitted model for diffusion, tau position, or velocity) into meta() for each window
      summary_result <- tryCatch(
        meta(window_estimate, variable = variable),
@@ -114,7 +115,7 @@ slide <- function(data, CTMM = NULL, window, dt.min = 0, variable = "area",
          point_estimate <- summary_result[1,2]
          CI_high <- summary_result[1,3]
        }
-     }
+   }
    
  print(point_estimate)
    
@@ -126,12 +127,11 @@ slide <- function(data, CTMM = NULL, window, dt.min = 0, variable = "area",
      CI_low = CI_low,
      CI_high = CI_high
    )
-   window_count <- window_count + 1
-   if (window_count == max_windows)
+   if (window_start_index == max_windows)
      break
  }
  # Convert list into data.frame
- results_df <- do.call(rbind, lapply(results_list[1:window_count], as.data.frame))
+ results_df <- do.call(rbind, lapply(results_list[1:length(window_starts)], as.data.frame))
  
  # Create the object for the custom class 'TS'
  ts_result <- new("TS", 

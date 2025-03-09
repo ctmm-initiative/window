@@ -1,11 +1,23 @@
-# Define S4 class
+# Define S4 class with an additional dimension map
 setClass(
   "TS",
   slots = list(
-    dataframe = "data.frame",  # Slot for storing the data
-    variable = "character"     # Slot for the variable name
+    dataframe = "data.frame",  
+    variable = "character",
+    dimension_map = "list"  # Store mapping for dimension conversion
+  ),
+  prototype = list(
+    dimension_map = list(
+      "area" = "area",
+      "position" = "length",
+      "speed" = "speed",
+      "diffusion" = "diffusion",
+      "velocity" = "time",
+      "position" = "time"
+    )
   )
 )
+
 
 # Define the plot method for the TS class
 setMethod(
@@ -21,7 +33,10 @@ setMethod(
     
     # Handle Y-axis
     CI <- c(data$point_estimate, data$CI_low, data$CI_high)  # Combine columns for dimfig
-    dimfig_output <- dimfig(data = CI, dimension = variable)  # Perform unit conversion
+    # Extract dimension type from the map
+    dimension_type <- x@dimension_map[[variable]]
+    # Use dimfig() with the mapped dimension
+    dimfig_output <- dimfig(data = CI, dimension = dimension_type)
     units_label <- dimfig_output$units[2]  # Use the short unit label for units
     ylab <- paste(variable, "(", units_label, ")", sep = "")
     
