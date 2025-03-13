@@ -3,10 +3,11 @@ This project introduces a sliding window analysis function for the `ctmm` R pack
 
 ## Features
 - Custom time-series object class for sliding window analysis of animal tracking data
-- Extracts and plots point estimates and confidence intervals for selected variable estimates
+- Extracts point estimates and confidence intervals for selected variable estimates
 - Customizable window size and time step options
 - Flexible functionality for individual and population level estimates
 - Compatible with the `ctmm` package's existing framework
+- Plot point estimats, confidence intervals and (optional) covariates to visualize correlation
 
 ## Getting Started
 
@@ -21,12 +22,16 @@ git clone https://github.com/ctmm-initiative/window.git
 cd window
 ```
 ### Arguments
-- data (tracking data of ctmm class)
-- variable (calculates parameter estimate : "area", "diffusion", "velocity")
-- dt.min (minimum time step between Time series windows as difftime object)
-- window (window size as difftime object)
-- select (More rigorous method for selecting movement model by default. For faster modeling fitting make select = FALSE)
-- recycle (Option to use the previous model fit as a starting point for the next model fitting process in the timeseries)
+- data: tracking data of ctmm class
+- CTMM: Guess model used as a starting point for the model fitting process. Use ctmm.guess(data)
+- variable: calculates parameter estimate : "area", "diffusion", "speed, "velocity", "position"
+- dt.min: minimum time step between Time series windows as difftime object
+- window: window size as difftime object
+- max_windows: Option for setting a limit to window estimates calculated for the time series (TS)
+- select: More rigorous method for selecting movement model by default. For faster modeling fitting make select = FALSE
+- recycle: Option to use the previous model fit as a starting point for the next model fitting process in the timeseries
+- Guassian: Option when estimating speed parameter (Default set to FALSE)
+- covariate: Option for including covariate in the TS object class and plotting along parameter estimate (name of column)
 
 ### Usage
 Create an object of class TS using the animal tracking data, and then use plot() to visualize the TS object
