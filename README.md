@@ -78,5 +78,5 @@ For questions or feedback, contact:
 Michael Garan  
 Email: michael.d.garan@gmail.com
 
-Nozomu Hirama
+Nozomu Hirama  
 Email: nozomu.hirama@ucf.edu
