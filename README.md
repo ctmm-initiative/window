@@ -32,6 +32,7 @@ cd window
 - recycle: Option to use the previous model fit as a starting point for the next model fitting process in the timeseries
 - Guassian: Option when estimating speed parameter (Default set to FALSE)
 - covariate: Option for including covariate in the TS object class and plotting along parameter estimate (name of column)
+- release: Option to examine trends in terms of days since release or days since first track (Default set to FALSE)
 
 ### Usage
 Create an object of class TS using the animal tracking data, and then use plot() to visualize the TS object
@@ -64,10 +65,18 @@ plot(population_TS)
 plot(individual_TS)
 
 ```
+
+For a more detailed guide, view example_usage.R located in the source-code folder.
+
 ## Acknowledgments
 - This project was developed by Michael Garan under the guidance of Dr. Christen Fleming.
+- Maintained and edited by Nozomu Hirama.
 
 ## Contact
 For questions or feedback, contact:
+
 Michael Garan  
 Email: michael.d.garan@gmail.com
+
+Nozomu Hirama
+Email: nozomu.hirama@ucf.edu

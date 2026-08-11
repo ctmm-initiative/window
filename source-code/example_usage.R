@@ -1,9 +1,20 @@
+# Install and load ctmm package
+remotes::install_github("ctmm-initiative/ctmm")
 library(ctmm)
+
+# Run source-code scripts.
+# Use base function source() by pointing to the file location of the downloaded R scripts 
+# or manually run through each line in all three scripts instead.
+source("main.R")
+source("TS_class.R")
+source("window_intervals.R")
 
 # Download example data
 data(buffalo)
 
 # Arguments
+# This is chosen depending on the scale of the trends and data. 
+# Choose a timestep and window width that best captures the target trend while smoothing.
 min_time_step <- as.difftime(10, units = "days")
 window <- as.difftime(30, units = "days")
 
