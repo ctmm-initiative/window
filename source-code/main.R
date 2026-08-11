@@ -1,8 +1,15 @@
 slide <- function(data, CTMM = NULL, window, dt.min = 0, variable = "area", 
-                  recycle = FALSE, max_windows = Inf, select = FALSE,
-                  Gaussian = FALSE, covariate = NULL, ...) {
+                       recycle = FALSE, max_windows = Inf, select = FALSE,
+                       Gaussian = FALSE, covariate = NULL, release = FALSE, ...) {
   # data & CTMM arguments can be a list of data.frames or a single data.frame
   if (is.list(data) && all(sapply(data, inherits, "data.frame"))) {
+    if (release) {
+      data <- lapply(data, function(df) {
+        df$t <- df$t - df$t[1]
+        df$timestamp <- as.POSIXct(df$t, origin = "1970-01-01", tz = "UTC")
+        return(df)
+      })
+    }
     window_starts <- global_timestamps(data, dt.min, window) # Determine the start of each window
     individual_df <- FALSE
     
@@ -10,6 +17,10 @@ slide <- function(data, CTMM = NULL, window, dt.min = 0, variable = "area",
     message("Sliding window time range: ", as.character(min(window_starts)), " to ", as.character(max(window_starts)))
     
   } else if (inherits(data, "data.frame")) {
+    if (release) {
+      data$t <- data$t - data$t[1]
+      data$timestamp <- as.POSIXct(data$t, origin = "1970-01-01", tz = "UTC")
+    }
     window_starts <- individual_timestamps(data, dt.min, window) # Determine the start of each window
     CTMM <- list(CTMM)
     data <- list(data)
@@ -43,7 +54,7 @@ slide <- function(data, CTMM = NULL, window, dt.min = 0, variable = "area",
       while (timestamps[start_index[i]] < window_starts[window_start_index] && start_index[i] < length(timestamps)) {
         start_index[i] <- start_index[i] + 1
       }
-      # Move end_index forward untill past (window_start + window)
+      # Move end_index forward until past (window_start + window)
       while (timestamps[end_index[i]] <= (window_starts[window_start_index] + window) && end_index[i] < length(timestamps)) {
         end_index[i] <- end_index[i] + 1
       }
@@ -58,7 +69,7 @@ slide <- function(data, CTMM = NULL, window, dt.min = 0, variable = "area",
       # Detect and skip large gaps in timestamp coverage
       if (coverage < 0.5 * window_duration) {
         message(paste("Skipping gap in dataset", i, "at window", window_start_index))
-        window_estimate[[i]] <- NULL
+        window_estimate[[i]] <- NA
         next
       }
       
@@ -111,7 +122,7 @@ slide <- function(data, CTMM = NULL, window, dt.min = 0, variable = "area",
       CI_low <- NA
       CI_high <- NA
     } else if (individual_df) {
-      summary_result <- summary(window_estimate[[1]])
+      summary_result <- summary(window_estimate[[1]], units = FALSE)
       # Rename columns for compatability
       rownames(summary_result$CI) <- c("area", "position", "velocity", "speed", "diffusion")
       CI_low <- summary_result$CI[variable, 1]
@@ -154,7 +165,8 @@ slide <- function(data, CTMM = NULL, window, dt.min = 0, variable = "area",
   ts_result <- new("TS", 
                    dataframe = results_df, 
                    variable = variable,
-                   covariate = as.numeric(results_df$covariate))
+                   covariate = as.numeric(results_df$covariate), 
+                   release = release)
   
   return(ts_result)
 }

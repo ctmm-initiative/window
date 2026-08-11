@@ -16,9 +16,13 @@ individual_TS <- slide(data = individual_data, CTMM = individual_GUESS, window =
 plot(individual_TS)
 
 # Population example dataset
-population_data <- buffalo[c(1,3,6)]
+population_data <- buffalo
 population_GUESS <- lapply(population_data, function(population_data) ctmm.guess(population_data, interactive = FALSE))
   # Create TS of population window estimates
 population_TS <- slide(data = population_data, CTMM = population_GUESS, window = window, dt.min = min_time_step, recycle = TRUE, max_windows = 6)
   # Plot results
 plot(population_TS)
+
+# Examine trends since release/since tagging
+population_TS_release <- slide(data = population_data, CTMM = population_GUESS, window = window, dt.min = min_time_step, recycle = TRUE, max_windows = 6, release = TRUE)
+plot(population_TS_release)

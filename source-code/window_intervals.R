@@ -5,13 +5,8 @@ global_timestamps <- function(data_list, dt.min, window) {
   timestamps <- lapply(data_list, function(data) as.POSIXct(data$timestamp))
   
   # Calculate global start and end times
-  global_start <- max(sapply(timestamps, min))  # Max of the minimum timestamps
-  global_end <- min(sapply(timestamps, max))    # Min of the maximum timestamps
-  
-  # Ensure global_start is before global_end
-  if (global_start > global_end) {
-    stop("Datasets do not overlap")
-  }
+  global_start <- min(sapply(timestamps, min))  # Min of the minimum timestamps
+  global_end <- max(sapply(timestamps, max))    # Max of the maximum timestamps
   
   # Ensure parameters are in seconds before running calculations
   step_size <- as.numeric(dt.min, units = "secs")

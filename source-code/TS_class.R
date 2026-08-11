@@ -5,7 +5,8 @@ setClass(
     dataframe = "data.frame",  # Main data frame for tracking data
     variable = "character",    # Variable of interest (e.g., "speed")
     dimension_map = "list",    # Mapping for dimension conversion (time, lat, lon, etc.)
-    covariate = "numeric"      # New slot for storing covariate (e.g., temperature)
+    covariate = "numeric",     # New slot for storing covariate (e.g., temperature)
+    release = "logical"        # Tracking if method "release" was applied (used for plotting).
   ),
   prototype = list(
     dimension_map = list(
@@ -32,7 +33,18 @@ setMethod(
     covariate <- x@covariate
     
     # Handle X-axis (time)
-    t <- data$timestamp
+    if (x@release){
+      t <- as.numeric(data$timestamp)
+    } else {
+      t <- data$timestamp
+    }
+    
+    tlength <- as.numeric(difftime(max(t), min(t), units = "days"))
+    
+    if (x@release){
+      t <- as.difftime(t, units = "secs")
+      units(t) <- "days"
+    }
     
     # Ensure valid dimension mapping
     dimension_type <- x@dimension_map[[variable]]
@@ -65,10 +77,16 @@ setMethod(
     
     # Main plot without default x-axis
     graphics::plot(t, data$point_estimate, type = "l", col = col, ylim = ylim,
-                   xlab = "Time", ylab = ylab, xaxt = "n", ...)
+                   xlab = ifelse(x@release, "Days", "Time"), ylab = ylab, xaxt = "n", ...)
     
     # Add custom x-axis
-    axis(1, at = x_ticks, labels = format(x_ticks, "%b %d"), las = 2)
+    if (x@release){
+      axis(1, at = x_ticks, labels = x_ticks, las = 2)
+    } else if (tlength < 60){
+      axis(1, at = x_ticks, labels = format(x_ticks, "%b %d"), las = 2)
+    } else {
+      axis(1, at = x_ticks, labels = format(x_ticks, "%Y %b"), las = 2)
+    }
     
     # Confidence interval lines
     graphics::lines(t, data$CI_low, col = adjustcolor(col, alpha.f = 0.3), lty = 2, ...)
